@@ -28,6 +28,15 @@ namespace Localization.SqlLocalizer.DbStringLocalizer
             builder.Entity<LocalizationRecord>().HasKey(m => m.Id);
             builder.Entity<LocalizationRecord>().HasAlternateKey(c => new { c.Key, c.LocalizationCulture, c.ResourceKey });
 
+            // From .NET 8 onwards, string comparisons are case insensitive by default in EF Core.
+            // Key and ResourceKey need to explicitly use case sensitive comparers.
+            var caseSensitiveComparer = new ValueComparer<string>(
+                (l, r) => string.Equals(l, r, StringComparison.Ordinal),
+                v => v.GetHashCode(),
+                v => v);
+            builder.Entity<LocalizationRecord>().Property(m => m.Key).Metadata.SetValueComparer(caseSensitiveComparer);
+            builder.Entity<LocalizationRecord>().Property(m => m.ResourceKey).Metadata.SetValueComparer(caseSensitiveComparer);
+
             // shadow properties
             builder.Entity<LocalizationRecord>().Property<DateTime>("UpdatedTimestamp");
 
